@@ -23,9 +23,42 @@ $cta = new CTAWrapper(array(
     'trainApiKey' => $yourTrainKey //Only if you need to use the train API
 ));
 ```
+5. Make a call on one of the 3 CTA API's.
+    * The params array is optional. If the endpoint you're calling does not require params, don't include them!
+    * The **key** parameter found on train and bus endpoints is automatically added for you. You don't need to include it in your params.
+```php
+    $cta->trainApiCall($endpoint,$paramsArray)
+    $cta->busApiCall($endpoint,$paramsArray)
+    $cta->alertApiCall($endpoint,$paramsArray)
+```
+ Quick list of all endpoints to endpointUrl's.
+```php
+    public static $API_ENDPOINTS = array(
+        'alerts' => array(
+            'routes'            => 'routes.aspx',
+            'alerts'            => 'alerts.aspx'
+        ),
+        'bus' => array(
+            'time'              => 'gettime',
+            'vehicles'          => 'getvehicles',
+            'routes'            => 'getroutes',
+            'routeDirections'   => 'getdirections',
+            'stops'             => 'getstops',
+            'patterns'          => 'getpatterns',
+            'predictions'       => 'getpredictions',
+            'serviceBulletins'  => 'getservicebulletins'
+        ),
+        'train' => array(
+            'arrivals'          => 'ttarrivals.aspx',
+            'followThisTrain'   => 'ttfollow.aspx',
+            'locations'         => 'ttpositions.aspx'
+        )
+    );
+```
 
 ## CTA API Docs
 This API Wrapper is very basic, and supports every endpoint, so just looking over the official CTA API docs will show you all the parameters you can use, along with nice descriptions
+
 * Train API Docs: http://www.transitchicago.com/assets/1/developer_center/cta_Train_Tracker_API_documentation_v1_42.pdf
 * Bus API Docs: http://www.transitchicago.com/assets/1/developer_center/BusTime_Developer_API_Guide.pdf
 * Alert API docs: http://www.transitchicago.com/assets/1/developer_center/cta_customer_alerts_API.pdf
