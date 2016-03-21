@@ -7,6 +7,7 @@ PHP Wrapper to help get data from the CTA API
 1. Have PHP 5.3+
     * (May work in older versions, but this is the earliest I've tested with)
 2. Require In the wrapper:
+
     ```php
     <?php
         require_once('{Whereever your project is located bla bla bla}/CTAWrapper.php');
@@ -17,6 +18,7 @@ PHP Wrapper to help get data from the CTA API
     * Busses - http://www.transitchicago.com/developers/bustracker.aspx
     * Trains - http://www.transitchicago.com/developers/traintracker.aspx
 4. Create an opject of the CTAWrapper, which accepts an array of api keys as it's only parameter, for now.
+
     ```php
     $cta = new CTAWrapper(array(
         'busApiKey' => $yourBusKey, //Only if you need to use the bus API
@@ -26,12 +28,14 @@ PHP Wrapper to help get data from the CTA API
 5. Make a call on one of the 3 CTA API's.
     * The params array is optional. If the endpoint you're calling does not require params, don't include them!
     * The **key** parameter found on train and bus endpoints is automatically added for you. You don't need to include it in your params.
+
     ```php
         $cta->trainApiCall($endpoint,$paramsArray)
         $cta->busApiCall($endpoint,$paramsArray)
         $cta->alertApiCall($endpoint,$paramsArray)
     ```
     * Quick list of all endpoints to endpointUrl's.
+
     ```php
         public static $API_ENDPOINTS = array(
             'alerts' => array(
@@ -65,6 +69,7 @@ This API Wrapper is very basic, and supports every endpoint, so just looking ove
 
 ## Train API Example
 An example of a request to the "Follow this train" endpoint.
+
 ```php
 <?php
     $cta = new CTAWrapper(array(
@@ -83,6 +88,7 @@ An example of a request to the "Follow this train" endpoint.
 ```
 ## Bus API Example
 This example looks up vehicle info on bus #1993 & #1219
+
 ```php
 <?php
     $cta = new CTAWrapper(array(
@@ -101,6 +107,7 @@ This example looks up vehicle info on bus #1993 & #1219
 
 ## Alerts API Example
 This example lists all the train stations, and any alerts they may have:
+
 ```php
 <?php
     $cta = new CTAWrapper(); //No API Keys required!
