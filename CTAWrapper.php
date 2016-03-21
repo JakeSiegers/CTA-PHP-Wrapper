@@ -11,9 +11,44 @@
  */
 class CTAWrapper{
 
-    protected $statusApiUrl;
-    protected $statusApiLocations;
+    /**
+     * Url's of the different API's
+     */
+    public static $API_URLS = array(
+        'alerts'    => 'http://www.transitchicago.com/api/1.0/',
+        'bus'       => 'http://www.ctabustracker.com/bustime/api/v1/',
+        'train'     => 'http://lapi.transitchicago.com/api/1.0/'
+    );
 
+    /**
+     * All of the known endpoints and locations for each API
+     */
+    public static $API_ENDPOINTS = array(
+        'alerts' => array(
+            'routes'            => 'routes.aspx',
+            'alerts'            => 'alerts.aspx'
+        ),
+        'bus' => array(
+            'time'              => 'gettime',
+            'vehicles'          => 'getvehicles',
+            'routes'            => 'getroutes',
+            'routeDirections'   => 'getdirections',
+            'stops'             => 'getstops',
+            'patterns'          => 'getpatterns',
+            'predictions'       => 'getpredictions',
+            'serviceBulletins'  => 'getservicebulletins'
+        ),
+        'train' => array(
+            'arrivals'          => 'ttarrivals.aspx',
+            'followThisTrain'   => 'ttfollow.aspx',
+            'locations'         => 'ttpositions.aspx'
+        )
+    );
+
+    /**
+     * CTAWrapper constructor.
+     * @param array $config
+     */
     function __construct($config = array()){
         $this->trainApiKey = null;
         $this->busApiKey = null;
@@ -25,50 +60,24 @@ class CTAWrapper{
         if(isset($config['busApiKey'])){
             $this->busApiKey = $config['busApiKey'];
         }
-
-        $this->apiUrls = array(
-            'alerts'    => 'http://www.transitchicago.com/api/1.0/',
-            'bus'       => 'http://www.ctabustracker.com/bustime/api/v1/',
-            'train'     => 'http://lapi.transitchicago.com/api/1.0/'
-        );
-
-        $this->apiEndpoints = array(
-            'alerts' => array(
-                'routes'            => 'routes.aspx',
-                'alerts'            => 'alerts.aspx'
-            ),
-            'bus' => array(
-                'time'              => 'gettime',
-                'vehicles'          => 'getvehicles',
-                'routes'            => 'getroutes',
-                'routeDirections'   => 'getdirections',
-                'stops'             => 'getstops',
-                'patterns'          => 'getpatterns',
-                'predictions'       => 'getpredictions',
-                'serviceBulletins'  => 'getservicebulletins'
-            ),
-            'train' => array(
-                'arrivals'          => 'ttarrivals.aspx',
-                'followThisTrain'   => 'ttfollow.aspx',
-                'locations'         => 'ttpositions.aspx'
-            )
-        );
     }
 
     /**
+     * Make a request to the alert API
      * @param $endpoint
      * @param array $params
      * @return array
      * @throws Exception
      */
     function alertApiCall($endpoint, $params = array()){
-        if(!isset($this->apiEndpoints['alerts'][$endpoint])){
+        if(!isset(self::$API_ENDPOINTS['alerts'][$endpoint])){
             throw new Exception("Unknown Alert Endpoint");
         }
-        return $this->fetchApiData($this->apiUrls['alerts'].$this->apiEndpoints['alerts'][$endpoint].$this->generateGetVariables($params));
+        return $this->fetchApiData(self::$API_URLS['alerts'].self::$API_ENDPOINTS['alerts'][$endpoint].$this->generateGetVariables($params));
     }
 
     /**
+     * Make a request to the bus API
      * @param $endpoint
      * @param array $params
      * @return array
@@ -76,13 +85,14 @@ class CTAWrapper{
      */
     function busApiCall($endpoint, $params = array()){
         $params['key'] = $this->busApiKey;
-        if(!isset($this->apiEndpoints['bus'][$endpoint])){
+        if(!isset(self::$API_ENDPOINTS['bus'][$endpoint])){
             throw new Exception("Unknown Bus Endpoint");
         }
-        return $this->fetchApiData($this->apiUrls['bus'].$this->apiEndpoints['bus'][$endpoint].$this->generateGetVariables($params));
+        return $this->fetchApiData(self::$API_URLS['bus'].self::$API_ENDPOINTS['bus'][$endpoint].$this->generateGetVariables($params));
     }
 
     /**
+     * Make a request to the train API
      * @param $endpoint
      * @param array $params
      * @return array
@@ -90,10 +100,10 @@ class CTAWrapper{
      */
     function trainApiCall($endpoint, $params = array()){
         $params['key'] = $this->trainApiKey;
-        if(!isset($this->apiEndpoints['train'][$endpoint])){
+        if(!isset(self::$API_ENDPOINTS['train'][$endpoint])){
             throw new Exception("Unknown Train Endpoint");
         }
-        return $this->fetchApiData($this->apiUrls['train'].$this->apiEndpoints['train'][$endpoint].$this->generateGetVariables($params));
+        return $this->fetchApiData(self::$API_URLS['train'].self::$API_ENDPOINTS['train'][$endpoint].$this->generateGetVariables($params));
     }
 
     /**
@@ -133,6 +143,7 @@ class CTAWrapper{
     }
 
     /**
+     * Converts known data types into API-friendly strings
      * @param $value
      * @return string
      */
