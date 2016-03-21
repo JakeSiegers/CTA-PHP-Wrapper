@@ -111,7 +111,7 @@ class CTAWrapper{
      * @param $url
      * @return array mixed
      */
-    protected function fetchApiData($url){
+    private function fetchApiData($url){
         $xmlResults = simplexml_load_file($url,null,LIBXML_NOCDATA);
         $jsonResults = json_encode($xmlResults);
         $arrayResults = json_decode($jsonResults,TRUE);
@@ -123,7 +123,7 @@ class CTAWrapper{
      * @param array $data
      * @return string
      */
-    protected function generateGetVariables($data){
+    private function generateGetVariables($data){
         $getStr = "";
         $varCount = 0;
         foreach($data as $key => $value){
