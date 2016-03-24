@@ -15,9 +15,10 @@ class CTAWrapper{
      * Url's of the different API's
      */
     public static $API_URLS = array(
-        'alerts'    => 'http://www.transitchicago.com/api/1.0/',
-        'bus'       => 'http://www.ctabustracker.com/bustime/api/v1/',
-        'train'     => 'http://lapi.transitchicago.com/api/1.0/'
+        'alerts'        => 'http://www.transitchicago.com/api/1.0/',
+        'bus'           => 'http://www.ctabustracker.com/bustime/api/v1/',
+        'train'         => 'http://lapi.transitchicago.com/api/1.0/',
+        'trainStops'    => 'http://data.cityofchicago.org/resource/8mj8-j3c4.json'
     );
 
     /**
@@ -46,6 +47,51 @@ class CTAWrapper{
     );
 
     /**
+     * Useful list of all the train lines.
+     * For whatever reason,
+     * the alertsAPI data, and the stopsAPI use different id's for referencing these lines,/
+     * I had to split the values up into 2 index's.
+     */
+    public static $TRAIN_LINES = array(
+        'Red Line'              => array(
+            'alertId' => 'Red',
+            'stopsId' => 'red'
+        ),
+        'Blue Line'             => array(
+            'alertId' => 'Blue',
+            'stopsId' => 'blue'
+        ),
+        'Brown Line'            => array(
+            'alertId' => 'Brn',
+            'stopsId' => 'brn'
+        ),
+        'Green Line'            => array(
+            'alertId' => 'G',
+            'stopsId' => 'g'
+        ),
+        'Orange Line'           => array(
+            'alertId' => 'Org',
+            'stopsId' => 'o'
+        ),
+        'Purple Line'           => array(
+            'alertId' => 'P',
+            'stopsId' => 'p'
+        ),
+        'Purple Line Express'   => array(
+            'alertId' => 'Pexp',
+            'stopsId' => 'pexp'
+        ),
+        'Pink Line'             => array(
+            'alertId' => 'Pink',
+            'stopsId' => 'pnk'
+        ),
+        'Yellow Line'           => array(
+            'alertId' => 'Y',
+            'stopsId' => 'y'
+        )
+    );
+
+    /**
      * CTAWrapper constructor.
      * @param array $config
      */
@@ -60,6 +106,10 @@ class CTAWrapper{
         if(isset($config['busApiKey'])){
             $this->busApiKey = $config['busApiKey'];
         }
+
+        if(isset($config['trainStopsApiKey'])){
+            $this->trainStopsApiKey = $config['trainStopsApiKey'];
+        }
     }
 
     /**
@@ -73,7 +123,7 @@ class CTAWrapper{
         if(!isset(self::$API_ENDPOINTS['alerts'][$endpoint])){
             throw new Exception("Unknown Alert Endpoint");
         }
-        return $this->fetchApiData(self::$API_URLS['alerts'].self::$API_ENDPOINTS['alerts'][$endpoint].$this->generateGetVariables($params));
+        return $this->fetchXmlApiData(self::$API_URLS['alerts'].self::$API_ENDPOINTS['alerts'][$endpoint].$this->generateGetVariables($params));
     }
 
     /**
@@ -84,11 +134,14 @@ class CTAWrapper{
      * @throws Exception
      */
     function busApiCall($endpoint, $params = array()){
+        if(!isset($this->busApiKey)){
+            throw new Exception('Bus API key required!');
+        }
         $params['key'] = $this->busApiKey;
         if(!isset(self::$API_ENDPOINTS['bus'][$endpoint])){
             throw new Exception("Unknown Bus Endpoint");
         }
-        return $this->fetchApiData(self::$API_URLS['bus'].self::$API_ENDPOINTS['bus'][$endpoint].$this->generateGetVariables($params));
+        return $this->fetchXmlApiData(self::$API_URLS['bus'].self::$API_ENDPOINTS['bus'][$endpoint].$this->generateGetVariables($params));
     }
 
     /**
@@ -99,19 +152,51 @@ class CTAWrapper{
      * @throws Exception
      */
     function trainApiCall($endpoint, $params = array()){
+        if(!isset($this->trainApiKey)){
+            throw new Exception('Train API key required!');
+        }
         $params['key'] = $this->trainApiKey;
         if(!isset(self::$API_ENDPOINTS['train'][$endpoint])){
             throw new Exception("Unknown Train Endpoint");
         }
-        return $this->fetchApiData(self::$API_URLS['train'].self::$API_ENDPOINTS['train'][$endpoint].$this->generateGetVariables($params));
+        return $this->fetchXmlApiData(self::$API_URLS['train'].self::$API_ENDPOINTS['train'][$endpoint].$this->generateGetVariables($params));
     }
 
     /**
-     * Fetch array formatted data from an XML url.
+     * Make a request to the L-Stop API (Oddly separate...)
+     * @param array $params
+     * @return array
+     * @throws Exception
+     */
+    function trainStopsApiCall($params = array()){
+        //This keys is optional, to prevent throttling.
+        if(isset($this->trainStopsApiKey)){
+            $params['$$app_token'] = $this->trainStopsApiKey;    
+        }
+        return $this->fetchJsonApiData(self::$API_URLS['trainStops'].$this->generateGetVariables($params));
+    }
+
+    /**
+     * Fetch array formatted data from a JSON API url
+     * @param $url
+     * @return array
+     * @throws Exception
+     */
+    private function fetchJsonApiData($url){
+        $response = file_get_contents($url);
+        $arrayResponse = json_decode($response,true);
+        if(is_null($arrayResponse)){
+            throw new Exception("Failed to json_decode() API response");
+        }
+        return $arrayResponse;
+    }
+
+    /**
+     * Fetch array formatted data from an XML API url.
      * @param $url
      * @return array mixed
      */
-    private function fetchApiData($url){
+    private function fetchXmlApiData($url){
         $xmlResults = simplexml_load_file($url,null,LIBXML_NOCDATA);
         $jsonResults = json_encode($xmlResults);
         $arrayResults = json_decode($jsonResults,TRUE);
