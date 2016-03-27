@@ -51,43 +51,46 @@ class CTAWrapper{
      * For whatever reason,
      * the alertsAPI data, and the stopsAPI use different id's for referencing these lines,/
      * I had to split the values up into 2 index's.
+     * 
+     * alertId => array('Nice Name','trainStopsId')
+     * 
      */
     public static $TRAIN_LINES = array(
-        'Red Line'              => array(
-            'alertId' => 'Red',
-            'stopsId' => 'red'
+        'Red'   => array(
+            'niceName'      => 'Red Ln',
+            'trainStopsId'  => 'red'
         ),
-        'Blue Line'             => array(
-            'alertId' => 'Blue',
-            'stopsId' => 'blue'
+        'Blue'  => array(
+            'niceName'      => 'Blue Ln',
+            'trainStopsId'  => 'blue'
         ),
-        'Brown Line'            => array(
-            'alertId' => 'Brn',
-            'stopsId' => 'brn'
+        'Brn'   => array(
+            'niceName'      => 'Brown Ln',
+            'trainStopsId'  => 'brn'
         ),
-        'Green Line'            => array(
-            'alertId' => 'G',
-            'stopsId' => 'g'
+        'G'     => array(
+            'niceName'      => 'Green Ln',
+            'trainStopsId'  => 'g'
         ),
-        'Orange Line'           => array(
-            'alertId' => 'Org',
-            'stopsId' => 'o'
+        'Org'   => array(
+            'niceName'      => 'Orange Ln',
+            'trainStopsId'  => 'o'
         ),
-        'Purple Line'           => array(
-            'alertId' => 'P',
-            'stopsId' => 'p'
+        'P'     => array(
+            'niceName'      => 'Purple Ln',
+            'trainStopsId'  => 'p'
         ),
-        'Purple Line Express'   => array(
-            'alertId' => 'Pexp',
-            'stopsId' => 'pexp'
+        'Pexp'  => array(
+            'niceName'      => 'Purple Ln Exp',
+            'trainStopsId'  => 'pexp'
         ),
-        'Pink Line'             => array(
-            'alertId' => 'Pink',
-            'stopsId' => 'pnk'
+        'Pink'  => array(
+            'niceName'      => 'Pink Ln',
+            'trainStopsId'  => 'pnk'
         ),
-        'Yellow Line'           => array(
-            'alertId' => 'Y',
-            'stopsId' => 'y'
+        'Y'     => array(
+            'niceName'      => 'Yellow Line',
+            'trainStopsId'  => 'y'
         )
     );
 
