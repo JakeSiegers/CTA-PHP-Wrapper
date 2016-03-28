@@ -196,7 +196,7 @@ class CTAWrapper{
     private function fetchJsonApiData($url){
         $cache = $this->checkCache($url);
         if($cache !== false){
-            return json_decode($cache,TRUE);;
+            return json_decode($cache,TRUE);
         }
         $jsonResponse = file_get_contents($url);
         $this->setCache($url,$jsonResponse);
@@ -215,7 +215,7 @@ class CTAWrapper{
     private function fetchXmlApiData($url){
         $cache = $this->checkCache($url);
         if($cache !== false){
-            return json_decode($cache,TRUE);;
+            return json_decode($cache,TRUE);
         }
         $xmlResults = simplexml_load_file($url,null,LIBXML_NOCDATA);
         $jsonResults = json_encode($xmlResults);
