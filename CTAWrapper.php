@@ -113,6 +113,14 @@ class CTAWrapper{
         if(isset($config['trainStopsApiKey'])){
             $this->trainStopsApiKey = $config['trainStopsApiKey'];
         }
+
+        $this->dbc = new PDO('sqlite:'.$_SERVER['DOCUMENT_ROOT'].'/sqlite/ctaApiCache.sqlite3');
+        $this->dbc->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
+        $this->dbc->exec("CREATE TABLE IF NOT EXISTS apiCache (
+            id INTEGER PRIMARY KEY, 
+            url TEXT, 
+            data TEXT, 
+            time DATETIME)");
     }
 
     /**
@@ -186,8 +194,13 @@ class CTAWrapper{
      * @throws Exception
      */
     private function fetchJsonApiData($url){
-        $response = file_get_contents($url);
-        $arrayResponse = json_decode($response,true);
+        $cache = $this->checkCache($url);
+        if($cache !== false){
+            return json_decode($cache,TRUE);;
+        }
+        $jsonResponse = file_get_contents($url);
+        $this->setCache($url,$jsonResponse);
+        $arrayResponse = json_decode($jsonResponse,true);
         if(is_null($arrayResponse)){
             throw new Exception("Failed to json_decode() API response");
         }
@@ -200,8 +213,13 @@ class CTAWrapper{
      * @return array mixed
      */
     private function fetchXmlApiData($url){
+        $cache = $this->checkCache($url);
+        if($cache !== false){
+            return json_decode($cache,TRUE);;
+        }
         $xmlResults = simplexml_load_file($url,null,LIBXML_NOCDATA);
         $jsonResults = json_encode($xmlResults);
+        $this->setCache($url,$jsonResults);
         $arrayResults = json_decode($jsonResults,TRUE);
         return $arrayResults;
     }
@@ -248,6 +266,59 @@ class CTAWrapper{
         return $value;
     }
 
-}
+    /**
+     * Check to see if a cache exists.
+     * @param $url
+     * @return bool|string
+     * @throws Exception
+     * @internal param $requestUrl
+     */
+    private function checkCache($url){
+        $sql = "SELECT id,url,data,time FROM apiCache WHERE url = :url";
+        $stmt = $this->dbc->prepare($sql);
+        $stmt->bindParam(':url', $url);
+        $stmt->execute();
+        $results = $stmt->fetchAll();
+        $numResults = count($results);
+        if($numResults == 0){
+            return false;
+        }
+        if($numResults !== 1){
+            throw new Exception('Double Cache Values!');
+        }
 
-?>
+        //check date to see if it's older than 1 minute
+        //Reduces Api Calls. None of the data needs to be within a minute anyway.
+        if(strtotime($results[0]['time']) <= strtotime("-1 minute")){
+            $this->deleteCache($url);
+            return false;
+        }
+
+        return $results[0]['data'];
+    }
+
+    /**
+     * Set a cache entry for a url
+     * @param $url
+     * @param $data
+     */
+    private function setCache($url, $data){
+        $sql = "INSERT INTO apiCache (url,data,time) VALUES (:url,:data,datetime('now','localtime')) ";
+        $stmt = $this->dbc->prepare($sql);
+        $stmt->bindParam(':url', $url);
+        $stmt->bindParam(':data', $data);
+        $stmt->execute();
+    }
+
+    /**
+     * Delete a cache entry of a URL
+     * @param $url
+     */
+    private function deleteCache($url){
+        $sql = "DELETE FROM apiCache WHERE url = :url";
+        $stmt = $this->dbc->prepare($sql);
+        $stmt->bindParam(':url', $url);
+        $stmt->execute();
+    }
+
+}
