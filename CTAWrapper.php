@@ -97,6 +97,7 @@ class CTAWrapper{
     /**
      * CTAWrapper constructor.
      * @param array $config
+     * @throws Exception
      */
     function __construct($config = array()){
         $this->trainApiKey = null;
@@ -114,7 +115,12 @@ class CTAWrapper{
             $this->trainStopsApiKey = $config['trainStopsApiKey'];
         }
 
-        $this->dbc = new PDO('sqlite:'.$_SERVER['DOCUMENT_ROOT'].'/sqlite/ctaApiCache.sqlite3');
+        if(!isset($config['cachePath'])){
+            throw new Exception('cachePath Config Required!');
+        }
+        $this->cachePath = $config['cachePath'];
+
+        $this->dbc = new PDO('sqlite:'.$this->cachePath.'/ctaApiCache.sqlite3');
         $this->dbc->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
         $this->dbc->exec("CREATE TABLE IF NOT EXISTS apiCache (
             id INTEGER PRIMARY KEY, 
@@ -134,7 +140,7 @@ class CTAWrapper{
         if(!isset(self::$API_ENDPOINTS['alerts'][$endpoint])){
             throw new Exception("Unknown Alert Endpoint");
         }
-        return $this->fetchXmlApiData(self::$API_URLS['alerts'].self::$API_ENDPOINTS['alerts'][$endpoint].$this->generateGetVariables($params));
+        return $this->fetchXmlApiData(self::$API_URLS['alerts'].self::$API_ENDPOINTS['alerts'][$endpoint],$params);
     }
 
     /**
@@ -152,7 +158,7 @@ class CTAWrapper{
         if(!isset(self::$API_ENDPOINTS['bus'][$endpoint])){
             throw new Exception("Unknown Bus Endpoint");
         }
-        return $this->fetchXmlApiData(self::$API_URLS['bus'].self::$API_ENDPOINTS['bus'][$endpoint].$this->generateGetVariables($params));
+        return $this->fetchXmlApiData(self::$API_URLS['bus'].self::$API_ENDPOINTS['bus'][$endpoint],$params);
     }
 
     /**
@@ -170,7 +176,7 @@ class CTAWrapper{
         if(!isset(self::$API_ENDPOINTS['train'][$endpoint])){
             throw new Exception("Unknown Train Endpoint");
         }
-        return $this->fetchXmlApiData(self::$API_URLS['train'].self::$API_ENDPOINTS['train'][$endpoint].$this->generateGetVariables($params));
+        return $this->fetchXmlApiData(self::$API_URLS['train'].self::$API_ENDPOINTS['train'][$endpoint],$params);
     }
 
     /**
@@ -184,7 +190,7 @@ class CTAWrapper{
         if(isset($this->trainStopsApiKey)){
             $params['$$app_token'] = $this->trainStopsApiKey;    
         }
-        return $this->fetchJsonApiData(self::$API_URLS['trainStops'].$this->generateGetVariables($params));
+        return $this->fetchJsonApiData(self::$API_URLS['trainStops'],$params);
     }
 
     /**
@@ -193,17 +199,9 @@ class CTAWrapper{
      * @return array
      * @throws Exception
      */
-    private function fetchJsonApiData($url){
-        $cache = $this->checkCache($url);
-        if($cache !== false){
-            return json_decode($cache,TRUE);
-        }
-        $jsonResponse = file_get_contents($url);
-        $this->setCache($url,$jsonResponse);
-        $arrayResponse = json_decode($jsonResponse,true);
-        if(is_null($arrayResponse)){
-            throw new Exception("Failed to json_decode() API response");
-        }
+    private function fetchJsonApiData($url,$params){
+        $response = $this->curlUrl($url,$params);
+        $arrayResponse = json_decode($response,true);
         return $arrayResponse;
     }
 
@@ -212,16 +210,42 @@ class CTAWrapper{
      * @param $url
      * @return array mixed
      */
-    private function fetchXmlApiData($url){
-        $cache = $this->checkCache($url);
-        if($cache !== false){
-            return json_decode($cache,TRUE);
-        }
-        $xmlResults = simplexml_load_file($url,null,LIBXML_NOCDATA);
+    private function fetchXmlApiData($url,$params){
+        $response = $this->curlUrl($url,$params);
+        $xmlResults = simplexml_load_string($response,null,LIBXML_NOCDATA);
         $jsonResults = json_encode($xmlResults);
-        $this->setCache($url,$jsonResults);
-        $arrayResults = json_decode($jsonResults,TRUE);
+        $arrayResults = json_decode($jsonResults,true);
         return $arrayResults;
+    }
+
+    private function curlUrl($url,$params){
+
+        //Remove Keys From Params, for caching
+        $keyLessParams = $params;
+        $keysToRemove = array('$$app_token','key');
+        foreach($keysToRemove as $key){
+            if(isset($keyLessParams[$key])){
+                unset($keyLessParams[$key]);
+            }
+        }
+
+        $cacheUrl = $url.$this->generateGetVariables($keyLessParams);
+        $cache = $this->checkCache($cacheUrl);
+        if($cache !== false){
+            return $cache;
+        }
+
+        //Curl Magic
+        $curlUrl = $url.$this->generateGetVariables($params);
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL,$curlUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $curlResponse = curl_exec ($ch);
+        curl_close ($ch);
+
+        $this->setCache($cacheUrl,$curlResponse);
+        return $curlResponse;
     }
 
     /**
@@ -232,6 +256,7 @@ class CTAWrapper{
     private function generateGetVariables($data){
         $getStr = "";
         $varCount = 0;
+
         foreach($data as $key => $value){
             $value = $this->convertValuesToString($value);
             if($value == ''){
